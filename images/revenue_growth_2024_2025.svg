@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="576pt" height="360pt" viewBox="0 0 576 360" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-04T07:54:53.495319</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator><cc:Agent><dc:title>Matplotlib v3.10.8, https://matplotlib.org/</dc:title></cc:Agent></dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs><style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style></defs>
+ <g id="figure_1">
+  <g id="patch_1"><path d="M 0 360 L 576 360 L 576 0 L 0 0 z" style="fill: #ffffff"/></g>
+  <g id="axes_1">
+   <g id="patch_2"><path d="M 44.57 332.12 L 565.2 332.12 L 565.2 26.88 L 44.57 26.88 z" style="fill: #ffffff"/></g>
+   <g id="patch_3"><path d="M 87.955833 332.12 L 174.7275 332.12 L 174.7275 41.415238 L 87.955833 41.415238 z" style="fill: #2e86ab"/></g>
+   <g id="patch_4"><path d="M 261.499167 332.12 L 348.270833 332.12 L 348.270833 263.007427 L 261.499167 263.007427 z" style="fill: #5dae8b"/></g>
+   <g id="patch_5"><path d="M 435.0425 332.12 L 521.814167 332.12 L 521.814167 296.699806 L 435.0425 296.699806 z" style="fill: #f4a261"/></g>
+   <line x1="44.57" y1="332.12" x2="565.2" y2="332.12" stroke="#000" stroke-width="0.8"/>
+   <line x1="44.57" y1="26.88" x2="44.57" y2="332.12" stroke="#000" stroke-width="0.8"/>
+   <g font-family="DejaVu Sans, Arial" font-size="10" fill="#000">
+    <text x="131.34" y="346.7" text-anchor="middle">Чижик</text>
+    <text x="304.89" y="346.7" text-anchor="middle">Пятёрочка (2)</text>
+    <text x="478.43" y="346.7" text-anchor="middle">Перекрёсток</text>
+    <text x="131.34" y="36.3" text-anchor="middle">67.3%</text>
+    <text x="304.89" y="257.9" text-anchor="middle">16.0%</text>
+    <text x="478.43" y="291.6" text-anchor="middle">8.2%</text>
+    <text x="304.89" y="20.88" font-size="12" text-anchor="middle">Прирост чистой розничной выручки: 2025 к 2024 году</text>
+    <text x="18.7" y="179.5" transform="rotate(-90 18.7 179.5)" text-anchor="middle">Темп прироста, %</text>
+   </g>
+  </g>
+ </g>
+</svg>
