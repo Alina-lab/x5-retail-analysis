@@ -8,7 +8,7 @@
 
 ## Данные
 
-Источник — [официальная страница X5](https://www.x5.ru/en/investors/financial-and-operational-results/). Использован Excel *Financial and Operating Results (RUB)*, лист `Operating Results`. Для годового сравнения использованы периоды «2024 Скорр.» и «2025 (2)».
+Источник — [официальная страница X5](https://www.x5.ru/en/investors/financial-and-operational-results/). Использован Excel *Financial and Operating Results (RUB)*, лист `Operating Results`. Для годового сравнения использованы периоды «2024 Скорр.» и «2025 (2)». В репозитории лежит подготовленная таблица для анализа; исходный Excel при необходимости можно скачать с сайта X5.
 
 Выручка указана в млн руб., торговая площадь — в тыс. кв. м.
 
@@ -42,22 +42,22 @@
 ## Как запустить
 
 1. Установить зависимости: `pip install -r requirements.txt`.
-2. При необходимости заново подготовить таблицы из исходного Excel: `python src/prepare_data.py`.
-3. Запустить анализ: `python src/analyze_revenue.py`.
+2. Запустить анализ: `python src/analyze_revenue.py`.
+3. Если нужно заново подготовить данные из исходной отчётности, скачать Excel X5 в `data/x5_results.xlsx` и выполнить `python src/prepare_data.py`.
 
 ## Визуализации
 
 ### Темпы прироста чистой розничной выручки
 
-![Темпы прироста чистой розничной выручки](images/revenue_growth_2024_2025.png)
+![Темпы прироста чистой розничной выручки](images/revenue_growth_2024_2025.svg)
 
 ### LFL-продажи, трафик и средний чек
 
-![LFL-продажи, трафик и средний чек](images/lfl_sales_traffic_average_check_2025.png)
+![LFL-продажи, трафик и средний чек](images/lfl_sales_traffic_average_check_2025.svg)
 
 ### Выручка, LFL-продажи и число магазинов
 
-![Прирост выручки, LFL-продажи и изменение числа магазинов](images/revenue_lfl_store_growth_2025.png)
+![Прирост выручки, LFL-продажи и изменение числа магазинов](images/revenue_lfl_store_growth_2025.svg)
 
 ## Ограничения анализа
 
