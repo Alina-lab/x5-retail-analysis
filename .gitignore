@@ -1,0 +1,14 @@
+.venv/
+.idea/
+__pycache__/
+*.py[cod]
+*.tmp
+*.temp
+*.bak
+*.log
+*$~
+.DS_Store
+.codex/
+AGENTS.md
+data/processed/x5_operating_results_wide.csv
+data/processed/x5_values_for_review.csv
