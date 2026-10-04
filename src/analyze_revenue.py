@@ -84,6 +84,7 @@ ax.bar_label(ax.containers[0], fmt="%.1f%%", padding=3)
 plt.xticks(rotation=0)
 plt.tight_layout()
 plt.savefig(IMAGE_DIR / "revenue_growth_2024_2025.png", dpi=150)
+plt.savefig(IMAGE_DIR / "revenue_growth_2024_2025.svg")
 plt.close()
 
 # LFL за 2025 год показывает изменение сопоставимых продаж к 2024 году.
@@ -128,6 +129,7 @@ ax.legend(title="Показатель")
 plt.xticks(rotation=0)
 plt.tight_layout()
 plt.savefig(IMAGE_DIR / "lfl_sales_traffic_average_check_2025.png", dpi=150)
+plt.savefig(IMAGE_DIR / "lfl_sales_traffic_average_check_2025.svg")
 plt.close()
 
 # Смотрим, как менялись число магазинов и торговая площадь.
@@ -214,4 +216,5 @@ ax.legend(title="Показатель")
 plt.xticks(rotation=0)
 plt.tight_layout()
 plt.savefig(IMAGE_DIR / "revenue_lfl_store_growth_2025.png", dpi=150)
+plt.savefig(IMAGE_DIR / "revenue_lfl_store_growth_2025.svg")
 plt.close()
