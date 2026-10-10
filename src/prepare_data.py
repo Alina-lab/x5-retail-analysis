@@ -1,9 +1,11 @@
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 SOURCE_FILE = PROJECT_DIR / "data" / "x5_results.xlsx"
 PROCESSED_DIR = PROJECT_DIR / "data" / "processed"
+
 
 def create_period_names(header_rows: pd.DataFrame) -> list[str]:
     """Создаёт понятные названия столбцов с периодами."""
@@ -13,7 +15,10 @@ def create_period_names(header_rows: pd.DataFrame) -> list[str]:
         period = header_rows.loc[4, column]
         correction = header_rows.loc[5, column]
 
-        period_name = str(int(period)) if isinstance(period, float) and period.is_integer() else str(period)
+        if isinstance(period, float) and period.is_integer():
+            period_name = str(int(period))
+        else:
+            period_name = str(period)
         if pd.notna(correction):
             period_name = f"{period_name} Скорр."
 
@@ -21,39 +26,9 @@ def create_period_names(header_rows: pd.DataFrame) -> list[str]:
 
     return period_names
 
-def add_section_names(data: pd.DataFrame, period_columns: list[str]) -> pd.DataFrame:
-    """Добавляет название раздела к каждому числовому показателю."""
-    data = data.copy()
-    data["Раздел"] = pd.NA
-
-    current_section = pd.NA
-    for index, row in data.iterrows():
-        has_values = row[period_columns].notna().any()
-
-        if not has_values:
-            current_section = row["Показатель"]
-        else:
-            data.loc[index, "Раздел"] = current_section
-
-    # Оставляем только реальные показатели, а не строки-заголовки разделов.
-    return data[data[period_columns].notna().any(axis=1)].copy()
-
-def make_indicator_names_unique(data: pd.DataFrame) -> pd.DataFrame:
-    """Уточняет повторяющиеся строки роста названием предыдущего показателя."""
-    data = data.copy()
-    previous_indicator = None
-
-    for index, indicator in data["Показатель"].items():
-        if indicator == "рост г-к-г,%" and previous_indicator is not None:
-            data.loc[index, "Показатель"] = f"{previous_indicator} — рост г-к-г,%"
-        else:
-            previous_indicator = indicator
-
-    return data
 
 def parse_values(long_data: pd.DataFrame) -> pd.DataFrame:
     """Переводит числа и проценты в единый числовой формат без потери исходного текста."""
-    long_data = long_data.copy()
     long_data["Значение исходное"] = long_data["Значение исходное"].astype("string")
 
     percentage_mask = long_data["Значение исходное"].str.contains("%", na=False)
@@ -71,55 +46,61 @@ def parse_values(long_data: pd.DataFrame) -> pd.DataFrame:
 
     long_data["Статус преобразования"] = "число"
     long_data.loc[percentage_mask, "Статус преобразования"] = "процент преобразован в долю"
-    long_data.loc[long_data["Значение исходное"].isna(), "Статус преобразования"] = "исходный пропуск"
+    long_data.loc[
+        long_data["Значение исходное"].isna(), "Статус преобразования"
+    ] = "исходный пропуск"
 
     unparsed_mask = long_data["Значение исходное"].notna() & long_data["Значение"].isna()
     long_data.loc[unparsed_mask, "Статус преобразования"] = "требует проверки"
 
     return long_data
 
-def add_period_details(long_data: pd.DataFrame) -> pd.DataFrame:
-    """Выделяет год, квартал и признак скорректированного периода."""
-    long_data = long_data.copy()
-    long_data["Скорректированный период"] = long_data["Период"].str.contains("Скорр", na=False)
-    long_data["Год"] = long_data["Период"].str.extract(r"(20\d{2})")[0].astype("Int64")
-    long_data["Квартал"] = long_data["Период"].str.extract(r"([1-4]) КВ")[0].astype("Int64")
-    long_data["Тип периода"] = "год"
-    long_data.loc[long_data["Квартал"].notna(), "Тип периода"] = "квартал"
-
-    return long_data
 
 def main() -> None:
-    # 1. Читаем исходный лист без предположения о строке заголовков.
-    operating_raw = pd.read_excel(
+    operating = pd.read_excel(
         SOURCE_FILE,
         sheet_name="Operating Results",
         header=None,
     )
-    operating_clean = operating_raw.dropna(how="all").dropna(axis=1, how="all")
+    operating = operating.dropna(how="all").dropna(axis=1, how="all")
 
-    # 2. Собираем названия столбцов и выделяем блок операционных показателей.
-    header_rows = operating_clean.loc[4:5].copy()
-    period_columns = create_period_names(header_rows)
+    # Строки 4–5 содержат периоды, 6–69 — операционные показатели листа X5.
+    periods = create_period_names(operating.loc[4:5])
+    operating_data = operating.loc[6:69]
+    operating_data.columns = ["Показатель", "Единица измерения", *periods]
 
-    operating_data = operating_clean.loc[6:69].copy()
-    operating_data.columns = ["Показатель", "Единица измерения", *period_columns]
+    # Название раздела находится в строке без значений и относится к строкам ниже.
+    has_values = operating_data[periods].notna().any(axis=1)
+    sections = operating_data["Показатель"].where(~has_values)
+    operating_data["Раздел"] = sections.ffill()
+    operating_data = operating_data.loc[has_values]
 
-    # 3. Убираем строки-разделители, но сохраняем их смысл в новом столбце «Раздел».
-    operating_data = add_section_names(operating_data, period_columns)
-    operating_data = make_indicator_names_unique(operating_data)
+    # Строка роста относится к предыдущему показателю: уточняем её название.
+    growth_rows = operating_data["Показатель"].eq("рост г-к-г,%")
+    indicators = operating_data["Показатель"].where(~growth_rows).ffill()
+    operating_data.loc[growth_rows, "Показатель"] = (
+        indicators[growth_rows] + " — рост г-к-г,%"
+    )
 
-    # 4. Переводим широкую таблицу в длинный формат: одна строка — один показатель за период.
     operating_long = operating_data.melt(
         id_vars=["Раздел", "Показатель", "Единица измерения"],
-        value_vars=period_columns,
+        value_vars=periods,
         var_name="Период",
         value_name="Значение исходное",
     )
 
-    # 5. Очищаем значения и добавляем признаки периода.
     operating_long = parse_values(operating_long)
-    operating_long = add_period_details(operating_long)
+    operating_long["Скорректированный период"] = operating_long["Период"].str.contains(
+        "Скорр", na=False
+    )
+    operating_long["Год"] = (
+        operating_long["Период"].str.extract(r"(20\d{2})")[0].astype("Int64")
+    )
+    operating_long["Квартал"] = (
+        operating_long["Период"].str.extract(r"([1-4]) КВ")[0].astype("Int64")
+    )
+    operating_long["Тип периода"] = "год"
+    operating_long.loc[operating_long["Квартал"].notna(), "Тип периода"] = "квартал"
 
     operating_long = operating_long[
         [
@@ -137,7 +118,6 @@ def main() -> None:
         ]
     ]
 
-    # 6. Сохраняем результаты отдельно от исходного файла.
     PROCESSED_DIR.mkdir(exist_ok=True)
     operating_data.to_csv(
         PROCESSED_DIR / "x5_operating_results_wide.csv",
@@ -163,6 +143,7 @@ def main() -> None:
     print(f"Строк в таблице для анализа: {len(operating_long)}")
     print(f"Строк, требующих проверки: {len(values_for_review)}")
     print("Созданы файлы в папке data/processed/")
+
 
 if __name__ == "__main__":
     main()

@@ -1,56 +1,49 @@
+from pathlib import Path
+
 import pandas as pd
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from pathlib import Path
 
-DATA_FILE = (
-    Path(__file__).resolve().parent.parent
-    / "data"
-    / "processed"
-    / "x5_operating_results_long.csv"
-)
-IMAGE_DIR = Path(__file__).resolve().parent.parent / "images"
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+DATA_FILE = PROJECT_DIR / "data" / "processed" / "x5_operating_results_long.csv"
+IMAGE_DIR = PROJECT_DIR / "images"
 
 data = pd.read_csv(DATA_FILE)
 
 chains = ["Пятёрочка (2)", "Перекрёсток", "Чижик"]
+periods = ["2024 Скорр.", "2025 (2)"]
 
-revenue_2025 = data[
-    (data["Раздел"] == "Чистая розничная выручка (1)")
-    & (data["Период"] == "2025 (2)")
-    & (data["Показатель"].isin(chains))
-].copy()
+annual = data[data["Период"].isin(periods)]
 
-revenue_2025 = revenue_2025.sort_values("Значение", ascending=False)
+# В разделе площади у Пятёрочки нет пробела перед сноской.
+annual["Показатель"] = annual["Показатель"].replace(
+    {"Пятёрочка(2)": "Пятёрочка (2)"}
+)
 
-total_revenue = revenue_2025["Значение"].sum()
+revenue = annual[annual["Раздел"].eq("Чистая розничная выручка (1)")]
+revenue_wide = revenue.pivot(
+    index="Показатель", columns="Период", values="Значение"
+)
+revenue_wide = revenue_wide.loc[chains, periods]
 
-revenue_2025["Доля, %"] = (
-    revenue_2025["Значение"] / total_revenue * 100
-).round(1)
-
-print(revenue_2025[["Показатель", "Значение", "Доля, %"]])
-
-# Сравниваем выручку за 2024 и 2025 годы.
-comparison_periods = ["2024 Скорр.", "2025 (2)"]
-revenue_comparison = data[
-    (data["Раздел"] == "Чистая розничная выручка (1)")
-    & (data["Период"].isin(comparison_periods))
-    & (data["Показатель"].isin(chains))
-].copy()
-
-revenue_growth = revenue_comparison.pivot(
-    index="Показатель",
-    columns="Период",
-    values="Значение",
-).reindex(columns=comparison_periods)
-
-if revenue_growth.isna().any().any():
+if revenue_wide.isna().any().any():
     raise ValueError("Не найдены данные по всем сетям и выбранным периодам.")
 
-revenue_growth = revenue_growth.rename(
+revenue_2025 = revenue_wide[["2025 (2)"]].rename(
+    columns={"2025 (2)": "Выручка 2025, млн руб."}
+).sort_values("Выручка 2025, млн руб.", ascending=False)
+revenue_2025["Доля, %"] = (
+    revenue_2025["Выручка 2025, млн руб."]
+    / revenue_2025["Выручка 2025, млн руб."].sum()
+    * 100
+).round(1)
+
+print("Структура выручки трёх сетей за 2025 год:")
+print(revenue_2025.to_string())
+
+revenue_growth = revenue_wide.rename(
     columns={
         "2024 Скорр.": "Выручка 2024, млн руб.",
         "2025 (2)": "Выручка 2025, млн руб.",
@@ -87,20 +80,16 @@ plt.savefig(IMAGE_DIR / "revenue_growth_2024_2025.png", dpi=150)
 plt.savefig(IMAGE_DIR / "revenue_growth_2024_2025.svg")
 plt.close()
 
-# LFL за 2025 год показывает изменение сопоставимых продаж к 2024 году.
 lfl_indicators = ["Продажи", "Трафик", "Средний чек"]
-lfl_data = data[
-    (data["Раздел"].isin([f"LFL - {chain}" for chain in chains]))
-    & (data["Показатель"].isin(lfl_indicators))
-    & (data["Период"] == "2025 (2)")
-].copy()
-
-lfl_data["Сеть"] = lfl_data["Раздел"].str.replace("LFL - ", "", regex=False)
-lfl_table = lfl_data.pivot(
-    index="Сеть",
-    columns="Показатель",
-    values="Значение",
-).reindex(index=chains, columns=lfl_indicators)
+lfl = annual[
+    annual["Раздел"].str.startswith("LFL - ")
+    & annual["Период"].eq("2025 (2)")
+]
+lfl_table = lfl.pivot(
+    index="Раздел", columns="Показатель", values="Значение"
+)
+lfl_table = lfl_table.loc[[f"LFL - {chain}" for chain in chains], lfl_indicators]
+lfl_table.index = chains
 
 if lfl_table.isna().any().any():
     raise ValueError("Не найдены все LFL-показатели для рассматриваемых сетей.")
@@ -121,7 +110,7 @@ ax = lfl_table.plot(
     figsize=(9, 5),
     color=["#2E86AB", "#5DAE8B", "#F4A261"],
 )
-ax.set_title("LFL-продажи и факторы изменения: 2025 к 2024 году")
+ax.set_title("LFL-продажи, трафик и средний чек: 2025 к 2024 году")
 ax.set_xlabel("")
 ax.set_ylabel("Изменение, %")
 ax.axhline(0, color="black", linewidth=0.8)
@@ -132,23 +121,14 @@ plt.savefig(IMAGE_DIR / "lfl_sales_traffic_average_check_2025.png", dpi=150)
 plt.savefig(IMAGE_DIR / "lfl_sales_traffic_average_check_2025.svg")
 plt.close()
 
-# Смотрим, как менялись число магазинов и торговая площадь.
-network_periods = ["2024 Скорр.", "2025 (2)"]
-store_data = data[
-    (data["Раздел"] == "Количество магазинов (на конец периода)")
-    & (data["Показатель"].isin(chains))
-    & (data["Период"].isin(network_periods))
-].copy()
-
-store_wide = store_data.pivot(
-    index="Показатель",
-    columns="Период",
-    values="Значение",
-).reindex(index=chains, columns=network_periods)
-
-store_table = pd.DataFrame(index=chains)
-store_table["Магазины 2024"] = store_wide["2024 Скорр."]
-store_table["Магазины 2025"] = store_wide["2025 (2)"]
+stores = annual[annual["Раздел"].eq("Количество магазинов (на конец периода)")]
+store_table = stores.pivot(
+    index="Показатель", columns="Период", values="Значение"
+)
+store_table = store_table.loc[chains, periods]
+store_table = store_table.rename(
+    columns={"2024 Скорр.": "Магазины 2024", "2025 (2)": "Магазины 2025"}
+)
 store_table["Изменение магазинов"] = (
     store_table["Магазины 2025"] - store_table["Магазины 2024"]
 )
@@ -156,30 +136,17 @@ store_table["Прирост магазинов, %"] = (
     store_table["Магазины 2025"] / store_table["Магазины 2024"] - 1
 ) * 100
 
-space_data = data[
-    (data["Раздел"] == "Торговая площадь")
-    & (data["Показатель"].isin(["Пятёрочка(2)", "Перекрёсток", "Чижик"]))
-    & (data["Период"].isin(network_periods))
-].copy()
-
-annual_data = pd.concat(
-    [revenue_comparison, lfl_data, store_data, space_data]
+space = annual[annual["Раздел"].eq("Торговая площадь")]
+space_table = space.pivot(
+    index="Показатель", columns="Период", values="Значение"
 )
-if not annual_data["Тип периода"].eq("год").all():
-    raise ValueError("Для анализа выбраны не только годовые периоды.")
-
-space_data["Показатель"] = space_data["Показатель"].replace(
-    {"Пятёрочка(2)": "Пятёрочка (2)"}
+space_table = space_table.loc[chains, periods]
+space_table = space_table.rename(
+    columns={
+        "2024 Скорр.": "Площадь 2024, тыс. кв. м",
+        "2025 (2)": "Площадь 2025, тыс. кв. м",
+    }
 )
-space_wide = space_data.pivot(
-    index="Показатель",
-    columns="Период",
-    values="Значение",
-).reindex(index=chains, columns=network_periods)
-
-space_table = pd.DataFrame(index=chains)
-space_table["Площадь 2024, тыс. кв. м"] = space_wide["2024 Скорр."]
-space_table["Площадь 2025, тыс. кв. м"] = space_wide["2025 (2)"]
 space_table["Изменение площади, тыс. кв. м"] = (
     space_table["Площадь 2025, тыс. кв. м"]
     - space_table["Площадь 2024, тыс. кв. м"]
@@ -190,14 +157,18 @@ space_table["Прирост площади, %"] = (
     - 1
 ) * 100
 
-network_summary = store_table.join(space_table).join(
-    revenue_growth["Темп прироста, %"]
-).join(lfl_table["LFL-продажи, %"])
+network_summary = pd.concat([
+    store_table,
+    space_table,
+    revenue_growth["Темп прироста, %"],
+    lfl_table["LFL-продажи, %"],
+], axis=1)
 
 if network_summary.isna().any().any():
     raise ValueError("Не найдены все показатели для сравнения физических сетей.")
 
 network_summary = network_summary.round(1)
+
 print("\nРасширение физических сетей и динамика продаж:")
 print(network_summary.to_string())
 
