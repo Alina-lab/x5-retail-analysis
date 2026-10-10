@@ -1,5 +1,11 @@
 .venv/
 .idea/
+.vscode/
+.ipynb_checkpoints/
+.jupyter/
+.ipython/
+.pytest_cache/
+.cache/
 __pycache__/
 *.py[cod]
 *.tmp
@@ -10,5 +16,6 @@ __pycache__/
 .DS_Store
 .codex/
 AGENTS.md
+data/**/*.xls*
 data/processed/x5_operating_results_wide.csv
 data/processed/x5_values_for_review.csv
